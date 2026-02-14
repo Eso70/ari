@@ -93,32 +93,33 @@ export const Footer = memo(function Footer({
         >
           {sponsorText}
         </p>
-        <div className="mt-2 sm:mt-2.5 inline-block sponsor-button-ring">
-          <button
-            type="button"
-            onClick={handleAriWhatsApp}
-            className="block w-full rounded-[calc(1rem-2px)] px-5 py-2.5 text-sm font-medium font-kurdish tracking-[0.15em] transition-all duration-300 hover:scale-[1.02] cursor-pointer border-0 backdrop-blur-sm"
-            style={{
-              color: buttonTextColor,
-              background: buttonBg,
-              boxShadow: buttonShadow,
-            }}
-            onMouseEnter={(e) => {
-              if (typeof window !== "undefined" && window.innerWidth >= 640) {
-                e.currentTarget.style.background = buttonBgHover;
-                e.currentTarget.style.boxShadow = buttonShadowHover;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (typeof window !== "undefined" && window.innerWidth >= 640) {
-                e.currentTarget.style.background = buttonBg;
-                e.currentTarget.style.boxShadow = buttonShadow;
-              }
-            }}
-          >
-            {nameText}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleAriWhatsApp}
+          className="inline-block mt-2 sm:mt-2.5 rounded-2xl px-5 py-2.5 text-sm font-medium font-kurdish tracking-[0.15em] transition-colors duration-200 cursor-pointer border backdrop-blur-sm"
+          style={{
+            color: buttonTextColor,
+            background: buttonBg,
+            borderColor: buttonBorder,
+            boxShadow: buttonShadow,
+          }}
+          onMouseEnter={(e) => {
+            if (typeof window !== "undefined" && window.innerWidth >= 640) {
+              e.currentTarget.style.background = buttonBgHover;
+              e.currentTarget.style.borderColor = buttonBorderHover;
+              e.currentTarget.style.boxShadow = buttonShadowHover;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (typeof window !== "undefined" && window.innerWidth >= 640) {
+              e.currentTarget.style.background = buttonBg;
+              e.currentTarget.style.borderColor = buttonBorder;
+              e.currentTarget.style.boxShadow = buttonShadow;
+            }
+          }}
+        >
+          {nameText}
+        </button>
       </div>
     </footer>
   );
