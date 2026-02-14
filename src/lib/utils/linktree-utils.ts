@@ -34,7 +34,7 @@ export function isExpired(_expireDate?: string | null): boolean {
  */
 export function getAbsoluteUrl(uid: string): string {
   if (typeof window === "undefined") {
-    return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+    return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3006";
   }
   const baseUrl = window.location.origin;
   if (uid === "ari") {

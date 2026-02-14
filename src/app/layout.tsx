@@ -14,7 +14,7 @@ const getMetadataBase = (): string => {
   if (process.env.NODE_ENV === "production") {
     return "https://ari.com"; // Update with your production domain
   }
-  return "http://localhost:3001";
+  return "http://localhost:3006";
 };
 
 export const metadata: Metadata = {
