@@ -1,9 +1,9 @@
 module.exports = {
   apps: [{
-    name: 'sarfr4z',
+    name: 'ari',
     script: './node_modules/.bin/next',
     args: ['start', '-p', '3006'],
-    cwd: '/var/www/sarfr4z',
+    cwd: '/var/www/ari',
     instances: 1,
     autorestart: true,
     watch: false,
