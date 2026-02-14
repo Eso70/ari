@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth/get-session";
+import { uploadImage, generateImageFilename, validateImageFile } from "@/lib/storage";
+
+export async function POST(request: NextRequest) {
+  try {
+    // Check admin session
+    const session = await getSession();
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+
+    if (!file) {
+      return NextResponse.json(
+        { error: "No file provided" },
+        { status: 400 }
+      );
+    }
+
+    // Validate image file
+    const validation = validateImageFile(file, 2.5); // 2.5MB limit
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: validation.error || "Invalid image file" },
+        { status: 400 }
+      );
+    }
+
+    const filename = generateImageFilename(file.name);
+    const { url } = await uploadImage(file, filename);
+
+    return NextResponse.json({ url }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to upload image" },
+      { status: 500 }
+    );
+  }
+}
+
