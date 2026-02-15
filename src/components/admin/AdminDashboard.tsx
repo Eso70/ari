@@ -157,10 +157,32 @@ export const AdminDashboard = memo(function AdminDashboard({
   }, []);
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([
-      fetchLinktrees(true, true),
-      fetchAnalyticsTotals(),
-    ]);
+    try {
+      // 1. Flush client queue (send pending views/clicks to server)
+      const { flushNow } = await import("@/lib/utils/client-queue");
+      await flushNow();
+      // 2. Flush server queues (Redis → DB) so fresh data is in the database
+      const flushRes = await fetch("/api/analytics/flush", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!flushRes.ok) {
+        const err = await flushRes.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Failed to flush queues");
+      }
+      // 3. Clear cache and refetch so UI shows fresh data
+      const { clearCachedData } = await import("@/lib/utils/cache");
+      clearCachedData("/api/linktrees");
+      clearCachedData("/api/analytics/totals");
+      await Promise.all([
+        fetchLinktrees(true, true),
+        fetchAnalyticsTotals(),
+      ]);
+    } catch (e) {
+      console.error("Refresh failed:", e);
+      throw e;
+    }
   }, [fetchLinktrees, fetchAnalyticsTotals]);
 
   // Client-side authentication check - redirect if no username provided
