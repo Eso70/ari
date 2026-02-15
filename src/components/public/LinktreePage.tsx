@@ -136,8 +136,14 @@ export const LinktreePage = memo(function LinktreePage({ linktree, links }: Link
   }, [backgroundStyle, theme.from, theme.via, theme.to, theme.isSolid]);
 
   const handleLinkClick = useCallback((linkId: string, url: string, platform: string, defaultMessage?: string | null) => {
-    // Track click; uniqueness is handled by the database
-    queueClick(linkId, linktree.id);
+    // Track click; ensure IDs are strings (can be undefined from serialization)
+    const lid = linkId != null ? String(linkId).trim() : "";
+    const ltId = linktree?.id != null ? String(linktree.id).trim() : "";
+    if (lid && ltId) {
+      queueClick(lid, ltId);
+      // Flush soon so click is sent before user may leave
+      import("@/lib/utils/client-queue").then(({ flushNow }) => flushNow().catch(() => {}));
+    }
 
     // Append default message to URL if platform supports it
     const finalUrl = appendMessageToUrl(url, platform, defaultMessage);
@@ -148,7 +154,7 @@ export const LinktreePage = memo(function LinktreePage({ linktree, links }: Link
     } catch {
       // Ignore popup blockers; user can tap again
     }
-  }, [linktree.id]);
+  }, [linktree?.id]);
 
   return (
     <>

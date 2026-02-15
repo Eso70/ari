@@ -228,14 +228,13 @@ export function queueView(uid: string): void {
 }
 
 export function queueClick(linkId: string, linktreeId: string): void {
-  // Only queue if both linkId and linktreeId are valid and not empty/null
-  if (!linkId || !linkId.trim() || !linktreeId || !linktreeId.trim()) {
-    return;
-  }
+  const lid = linkId != null ? String(linkId).trim() : "";
+  const ltId = linktreeId != null ? String(linktreeId).trim() : "";
+  if (!lid || !ltId) return;
   addToQueue({
     type: 'click',
-    linkId: linkId.trim(),
-    linktreeId: linktreeId.trim(),
+    linkId: lid,
+    linktreeId: ltId,
     timestamp: Date.now(),
   });
 }

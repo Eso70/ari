@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
         if (!Array.isArray(clicks) || clicks.length === 0 || !hasValidIp) {
           return { count: 0 };
         }
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const ip = analyticsData.ip_address.trim();
         const sessionId = analyticsData.session_id?.trim() || null;
         const clickedAt = new Date().toISOString();
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
         for (const click of clicks) {
           const linkId = click.linkId?.trim();
           const linktreeId = click.linktreeId?.trim();
-          if (!linkId || !linktreeId) continue;
+          if (!linkId || !linktreeId || !uuidRegex.test(linkId) || !uuidRegex.test(linktreeId)) continue;
           clickPromises.push(addClick({
             link_id: linkId,
             linktree_id: linktreeId,
