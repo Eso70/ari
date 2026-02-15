@@ -41,12 +41,11 @@ export async function POST(request: NextRequest) {
         return { count: viewPromises.length };
       })(),
 
-      // Clicks: no DB lookup (client sends linktreeId); queue all to Redis
+      // Clicks: same as views - accept and queue all (DB validates on insert)
       (async () => {
         if (!Array.isArray(clicks) || clicks.length === 0 || !hasValidIp) {
           return { count: 0 };
         }
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const ip = analyticsData.ip_address.trim();
         const sessionId = analyticsData.session_id?.trim() || null;
         const clickedAt = new Date().toISOString();
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
         for (const click of clicks) {
           const linkId = click.linkId?.trim();
           const linktreeId = click.linktreeId?.trim();
-          if (!linkId || !linktreeId || !uuidRegex.test(linkId) || !uuidRegex.test(linktreeId)) continue;
+          if (!linkId || !linktreeId) continue;
           clickPromises.push(addClick({
             link_id: linkId,
             linktree_id: linktreeId,
