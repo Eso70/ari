@@ -23,7 +23,7 @@ export async function GET(
       );
     }
 
-    // View tracking is handled via dedicated view tracking API route (unique views only)
+    // View tracking is handled via dedicated view tracking API; database handles uniqueness
 
     return NextResponse.json(
       {

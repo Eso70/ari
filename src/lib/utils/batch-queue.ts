@@ -1,7 +1,8 @@
 /**
  * Batch queue for analytics: views and clicks.
- * Uses Redis lists (persistent, low DB load).
- * Flush every 5 min to DB to avoid overloading the database.
+ * API only pushes to Redis (no direct DB writes). This module flushes Redis → DB
+ * in batches (insertPageViewsBatch / insertLinkClicksBatch) on an interval.
+ * Uniqueness for reporting is done in SQL (COUNT(DISTINCT ip_address)).
  */
 
 import { insertPageViewsBatch, insertLinkClicksBatch } from "@/lib/db/queries";

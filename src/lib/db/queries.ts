@@ -156,6 +156,21 @@ export async function getLinktreeIdByUid(uid: string): Promise<string | null> {
   return r.id;
 }
 
+/** Bulk resolve UIDs to linktree IDs in one query (no N+1). Used by analytics batch. */
+export async function getLinktreeIdsByUids(uids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(uids)].filter((u) => u && u.trim());
+  if (unique.length === 0) return new Map();
+  const { rows } = await query<{ uid: string; id: string }>(
+    "SELECT uid, id FROM linktrees WHERE uid = ANY($1::text[])",
+    [unique]
+  );
+  const map = new Map<string, string>();
+  for (const r of rows ?? []) {
+    if (r?.uid && r?.id) map.set(r.uid, r.id);
+  }
+  return map;
+}
+
 export async function getLinktreeWithLinksByUid(uid: string): Promise<{ linktree: Linktree | null; links: Link[]; schemaMissing?: boolean }> {
   const cached = await redisGet("lt:wl:" + uid);
   if (cached) {

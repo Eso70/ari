@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractAnalyticsData } from "@/lib/utils/analytics";
-import { getLinktreeIdByUid } from "@/lib/db/queries";
+import { getLinktreeIdsByUids } from "@/lib/db/queries";
 import { addView, addClick } from "@/lib/utils/batch-queue";
 
-// POST /api/analytics/batch - Batch process multiple analytics events
-// This reduces API calls from N individual calls to 1 batch call
+// POST /api/analytics/batch - Queue views and clicks; no direct DB writes here.
+// Single bulk UID lookup (no N+1), then push all events to Redis. Background flush writes to DB in batch.
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -13,85 +13,57 @@ export async function POST(request: NextRequest) {
       clicks?: Array<{ linkId: string; linktreeId: string }>;
     };
 
-    // Extract analytics data once for both views and clicks
     const analyticsData = await extractAnalyticsData(request);
     const hasValidIp = analyticsData.ip_address && analyticsData.ip_address.trim();
 
-    // Process views and clicks in parallel for better performance
     const [viewsResult, clicksResult] = await Promise.all([
-      // Process views in batch
+      // Views: one bulk UID→linktree_id query, then queue all to Redis (batch flush writes to DB)
       (async () => {
         if (!Array.isArray(views) || views.length === 0 || !hasValidIp) {
           return { count: 0 };
         }
-        
-        const uniqueViews = new Map<string, string>(); // uid -> linktreeId
-        
-        // Get all unique UIDs and their linktree IDs
+        const uids = views.map((v) => v.uid?.trim()).filter(Boolean) as string[];
+        if (uids.length === 0) return { count: 0 };
+        const uidToId = await getLinktreeIdsByUids(uids);
+        const ip = analyticsData.ip_address.trim();
+        const sessionId = analyticsData.session_id?.trim() || null;
+        const viewedAt = new Date().toISOString();
+        const viewPromises: Promise<void>[] = [];
         for (const view of views) {
-          if (view.uid && view.uid.trim() && !uniqueViews.has(view.uid.trim())) {
-            const linktreeId = await getLinktreeIdByUid(view.uid.trim());
-            if (linktreeId) {
-              uniqueViews.set(view.uid.trim(), linktreeId);
-            }
+          const uid = view.uid?.trim();
+          if (!uid) continue;
+          const linktreeId = uidToId.get(uid);
+          if (linktreeId) {
+            viewPromises.push(addView({ linktree_id: linktreeId, ip_address: ip, session_id: sessionId, viewed_at: viewedAt }));
           }
         }
-        
-        // Add all views to batch queue - wait for all to complete
-        const viewPromises = [];
-        for (const linktreeId of uniqueViews.values()) {
-          viewPromises.push(addView({
-            linktree_id: linktreeId,
-            ip_address: analyticsData.ip_address.trim(),
-            session_id: analyticsData.session_id?.trim() || null,
-            viewed_at: new Date().toISOString(),
-          }));
-        }
         await Promise.all(viewPromises);
-        
-        return { count: uniqueViews.size };
+        return { count: viewPromises.length };
       })(),
-      
-      // Process clicks in batch
+
+      // Clicks: no DB lookup (client sends linktreeId); queue all to Redis
       (async () => {
         if (!Array.isArray(clicks) || clicks.length === 0 || !hasValidIp) {
           return { count: 0 };
         }
-        
-        const uniqueClicks = new Map<string, { linkId: string; linktreeId: string }>();
-        
-        // Deduplicate clicks
+        const ip = analyticsData.ip_address.trim();
+        const sessionId = analyticsData.session_id?.trim() || null;
+        const clickedAt = new Date().toISOString();
+        const clickPromises: Promise<void>[] = [];
         for (const click of clicks) {
-          if (
-            click.linkId && 
-            click.linkId.trim() && 
-            click.linktreeId && 
-            click.linktreeId.trim()
-          ) {
-            const key = `${click.linkId.trim()}_${click.linktreeId.trim()}`;
-            if (!uniqueClicks.has(key)) {
-              uniqueClicks.set(key, {
-                linkId: click.linkId.trim(),
-                linktreeId: click.linktreeId.trim(),
-              });
-            }
-          }
-        }
-        
-        // Add all clicks to batch queue - wait for all to complete
-        const clickPromises = [];
-        for (const click of uniqueClicks.values()) {
+          const linkId = click.linkId?.trim();
+          const linktreeId = click.linktreeId?.trim();
+          if (!linkId || !linktreeId) continue;
           clickPromises.push(addClick({
-            link_id: click.linkId,
-            linktree_id: click.linktreeId,
-            ip_address: analyticsData.ip_address.trim(),
-            session_id: analyticsData.session_id?.trim() || null,
-            clicked_at: new Date().toISOString(),
+            link_id: linkId,
+            linktree_id: linktreeId,
+            ip_address: ip,
+            session_id: sessionId,
+            clicked_at: clickedAt,
           }));
         }
         await Promise.all(clickPromises);
-        
-        return { count: uniqueClicks.size };
+        return { count: clickPromises.length };
       })(),
     ]);
 

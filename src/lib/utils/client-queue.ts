@@ -114,49 +114,21 @@ async function flushQueue(): Promise<void> {
       return; // No data to send, skip API calls
     }
     
-    // Prepare batch payload
+    // Prepare batch payload - send all events; database handles uniqueness
     const batchViews: Array<{ uid: string }> = [];
     const batchClicks: Array<{ linkId: string; linktreeId: string }> = [];
-    
-    // Collect unique views
-    if (views.length > 0) {
-      const uniqueViews = new Map<string, QueuedView>();
-      views.forEach(view => {
-        // Only add if UID is valid and not empty/null
-        if (view.uid && view.uid.trim() && !uniqueViews.has(view.uid)) {
-          uniqueViews.set(view.uid, view);
-        }
-      });
-      
-      // Add to batch payload
-      for (const view of uniqueViews.values()) {
-        if (view.uid && view.uid.trim()) {
-          batchViews.push({ uid: view.uid.trim() });
-        }
+
+    for (const view of views) {
+      if (view.uid && view.uid.trim()) {
+        batchViews.push({ uid: view.uid.trim() });
       }
     }
-    
-    // Collect unique clicks
-    if (clicks.length > 0) {
-      const uniqueClicks = new Map<string, QueuedClick>();
-      clicks.forEach(click => {
-        // Only add if linkId and linktreeId are valid and not empty/null
-        if (click.linkId && click.linkId.trim() && click.linktreeId && click.linktreeId.trim()) {
-          const key = `${click.linkId.trim()}_${click.linktreeId.trim()}`;
-          if (!uniqueClicks.has(key)) {
-            uniqueClicks.set(key, click);
-          }
-        }
-      });
-      
-      // Add to batch payload
-      for (const click of uniqueClicks.values()) {
-        if (click.linkId && click.linkId.trim() && click.linktreeId && click.linktreeId.trim()) {
-          batchClicks.push({
-            linkId: click.linkId.trim(),
-            linktreeId: click.linktreeId.trim(),
-          });
-        }
+    for (const click of clicks) {
+      if (click.linkId && click.linkId.trim() && click.linktreeId && click.linktreeId.trim()) {
+        batchClicks.push({
+          linkId: click.linkId.trim(),
+          linktreeId: click.linktreeId.trim(),
+        });
       }
     }
     
@@ -179,30 +151,8 @@ async function flushQueue(): Promise<void> {
         // On failure, restore events to queue for retry
         const failedEvents: QueuedEvent[] = [];
         
-        // Restore views
-        if (batchViews.length > 0 && views.length > 0) {
-          const viewMap = new Map<string, QueuedView>();
-          views.forEach(v => {
-            if (v.uid && v.uid.trim() && !viewMap.has(v.uid)) {
-              viewMap.set(v.uid, v);
-            }
-          });
-          failedEvents.push(...viewMap.values());
-        }
-        
-        // Restore clicks
-        if (batchClicks.length > 0 && clicks.length > 0) {
-          const clickMap = new Map<string, QueuedClick>();
-          clicks.forEach(c => {
-            if (c.linkId && c.linkId.trim() && c.linktreeId && c.linktreeId.trim()) {
-              const key = `${c.linkId.trim()}_${c.linktreeId.trim()}`;
-              if (!clickMap.has(key)) {
-                clickMap.set(key, c);
-              }
-            }
-          });
-          failedEvents.push(...clickMap.values());
-        }
+        if (views.length > 0) failedEvents.push(...views);
+        if (clicks.length > 0) failedEvents.push(...clicks);
         
         if (failedEvents.length > 0) {
           const currentQueue = getQueue();

@@ -12,7 +12,6 @@ import {
   deriveTextSecondaryColor,
   deriveHighlightColor,
 } from "@/lib/utils/theme-colors";
-import { hasTrackedView, markViewTracked, hasTrackedClick, markClickTracked } from "@/lib/utils/tracking";
 import { queueView, queueClick } from "@/lib/utils/client-queue";
 import { getBackgroundGradient, DEFAULT_BACKGROUND_COLOR } from "@/lib/config/background-gradients";
 
@@ -22,9 +21,9 @@ interface LinktreePageProps {
 }
 
 export const LinktreePage = memo(function LinktreePage({ linktree, links }: LinktreePageProps) {
-  // Ref to prevent duplicate view tracking calls
+  // Ref to prevent duplicate view tracking in same mount (e.g. React Strict Mode)
   const viewTrackedRef = useRef(false);
-  
+
   // Fix viewport height on iOS - must be client-side
   // This ensures proper height calculation on iPhone Safari
   // Performance: Debounced resize handler
@@ -57,24 +56,10 @@ export const LinktreePage = memo(function LinktreePage({ linktree, links }: Link
     };
   }, []);
 
-  // Track unique page view on mount (only once per browser session)
+  // Track page view on mount (once per mount). Uniqueness is handled by the database.
   useEffect(() => {
-    // Prevent duplicate calls with ref check (synchronous, immediate)
-    if (viewTrackedRef.current) {
-      return; // Already processing or tracked in this component instance
-    }
-    
-    // Check if already tracked in storage - skip API call if already tracked
-    if (hasTrackedView(linktree.uid)) {
-      viewTrackedRef.current = true; // Mark as tracked
-      return; // Already tracked, skip API call
-    }
-    
-    // Mark as tracked immediately (both ref and storage) to prevent duplicate calls
+    if (viewTrackedRef.current) return;
     viewTrackedRef.current = true;
-    markViewTracked(linktree.uid);
-    
-    // Queue view for batch sending (reduces API calls)
     queueView(linktree.uid);
   }, [linktree.uid]);
   // Get background gradient or solid color based on background_color
@@ -151,14 +136,8 @@ export const LinktreePage = memo(function LinktreePage({ linktree, links }: Link
   }, [backgroundStyle, theme.from, theme.via, theme.to, theme.isSolid]);
 
   const handleLinkClick = useCallback((linkId: string, url: string, platform: string, defaultMessage?: string | null) => {
-    // Check if already tracked - only track unique clicks
-    if (!hasTrackedClick(linkId)) {
-      // Mark as tracked immediately to prevent duplicate calls
-      markClickTracked(linkId);
-      
-      // Queue click for batch sending (reduces API calls)
-      queueClick(linkId, linktree.id);
-    }
+    // Track click; uniqueness is handled by the database
+    queueClick(linkId, linktree.id);
 
     // Append default message to URL if platform supports it
     const finalUrl = appendMessageToUrl(url, platform, defaultMessage);

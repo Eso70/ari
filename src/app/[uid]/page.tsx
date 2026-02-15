@@ -34,7 +34,7 @@ export default async function LinktreePublicPage({ params }: PageProps) {
     notFound();
   }
 
-  // View tracking is handled client-side via API route (unique views only)
+  // View tracking is handled client-side via API; database handles uniqueness
   return <LinktreePage linktree={linktree} links={links} />;
 }
 
