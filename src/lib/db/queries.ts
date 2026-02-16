@@ -501,8 +501,9 @@ export async function getLinktreeAnalytics(linktreeId: string): Promise<Analytic
     query<{ id: string; platform: string; display_name?: string | null; click_count: number }>("SELECT id, platform, display_name, click_count FROM links WHERE linktree_id = $1", [linktreeId]),
   ]);
   const stats = statsRes.rows[0];
-  const uniqueViews = stats ? Number(stats.unique_views) || 0 : 0;
-  const uniqueClicks = stats ? Number(stats.unique_clicks) || 0 : 0;
+  // Per-linktree: show total counts (all visits), not unique (so visiting twice = 2 views)
+  const totalViews = stats ? Number(stats.total_views) || 0 : 0;
+  const totalClicks = stats ? Number(stats.total_clicks) || 0 : 0;
   const views = viewsRes.rows || [];
   const clicks = clicksRes.rows || [];
   const linksData = linksRes.rows || [];
@@ -523,8 +524,8 @@ export async function getLinktreeAnalytics(linktreeId: string): Promise<Analytic
     .sort((a, b) => b.click_count - a.click_count)
     .slice(0, 10);
   const result: AnalyticsSummary = {
-    unique_views: uniqueViews,
-    unique_clicks: uniqueClicks,
+    unique_views: totalViews, // Per-linktree: show all visits (not unique)
+    unique_clicks: totalClicks, // Per-linktree: show all clicks (not unique)
     views_by_device: by("views_by_device"),
     clicks_by_device: by("clicks_by_device"),
     clicks_by_platform: by("clicks_by_platform"),
