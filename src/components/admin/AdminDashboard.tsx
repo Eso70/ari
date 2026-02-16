@@ -158,10 +158,7 @@ export const AdminDashboard = memo(function AdminDashboard({
 
   const handleRefresh = useCallback(async () => {
     try {
-      // 1. Flush client queue (send pending views/clicks to server)
-      const { flushNow } = await import("@/lib/utils/client-queue");
-      await flushNow();
-      // 2. Flush server queues (Redis → DB) so fresh data is in the database
+      // Flush server queues (Redis → DB) so fresh data is in the database
       const flushRes = await fetch("/api/analytics/flush", {
         method: "POST",
         credentials: "include",
@@ -171,7 +168,7 @@ export const AdminDashboard = memo(function AdminDashboard({
         const err = await flushRes.json().catch(() => ({}));
         throw new Error(err.error || err.message || "Failed to flush queues");
       }
-      // 3. Clear cache and refetch so UI shows fresh data
+      // Clear cache and refetch so UI shows fresh data
       const { clearCachedData } = await import("@/lib/utils/cache");
       clearCachedData("/api/linktrees");
       clearCachedData("/api/analytics/totals");

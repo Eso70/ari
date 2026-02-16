@@ -12,7 +12,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { StatCard } from "./analytics/StatCard";
-import { flushNow } from "@/lib/utils/client-queue";
 
 
 // Add custom scrollbar styles
@@ -122,10 +121,7 @@ export const AnalyticsModal = memo(function AnalyticsModal({
     setIsLoading(true);
     setError(null);
     try {
-      // Step 1: Flush client-side queue - wait for all data to be sent to server
-      await flushNow();
-      
-      // Step 2: Flush server-side batch queues to database - wait for all inserts to complete
+      // Flush server-side batch queues to database - wait for all inserts to complete
       const flushResponse = await fetch(`/api/linktrees/${linktreeId}/analytics/flush`, {
         method: 'POST',
         credentials: 'include',
@@ -143,13 +139,13 @@ export const AnalyticsModal = memo(function AnalyticsModal({
         throw new Error("Queue flush did not complete successfully");
       }
       
-      // Step 3: Clear cache to ensure fresh data
+      // Clear cache to ensure fresh data
       const { clearCachedData } = await import('@/lib/utils/cache');
       clearCachedData(`/api/linktrees/${linktreeId}/analytics`);
       clearCachedData('/api/linktrees');
       clearCachedData('/api/analytics/totals');
       
-      // Step 4: Fetch fresh analytics data (bypassing cache to get latest data)
+      // Fetch fresh analytics data (bypassing cache to get latest data)
       await fetchAnalytics(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "هەڵەیەک لە نوێکردنەوەدا ڕوویدا");

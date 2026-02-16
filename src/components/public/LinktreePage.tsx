@@ -12,7 +12,6 @@ import {
   deriveTextSecondaryColor,
   deriveHighlightColor,
 } from "@/lib/utils/theme-colors";
-import { queueView, queueClick, flushNow } from "@/lib/utils/client-queue";
 import { getBackgroundGradient, DEFAULT_BACKGROUND_COLOR } from "@/lib/config/background-gradients";
 
 interface LinktreePageProps {
@@ -56,11 +55,14 @@ export const LinktreePage = memo(function LinktreePage({ linktree, links }: Link
     };
   }, []);
 
-  // Track page view on mount (once per mount). Uniqueness is handled by the database.
+  // Track page view on mount (once per mount) - send directly to API
   useEffect(() => {
     if (viewTrackedRef.current) return;
     viewTrackedRef.current = true;
-    queueView(linktree.uid);
+    fetch(`/api/public/linktrees/${linktree.uid}/view`, {
+      method: 'POST',
+      keepalive: true,
+    }).catch(() => {});
   }, [linktree.uid]);
   // Get background gradient or solid color based on background_color
   const baseTheme = useMemo(() => {
@@ -136,9 +138,13 @@ export const LinktreePage = memo(function LinktreePage({ linktree, links }: Link
   }, [backgroundStyle, theme.from, theme.via, theme.to, theme.isSolid]);
 
   const handleLinkClick = useCallback((linkId: string, url: string, platform: string, defaultMessage?: string | null) => {
-    // Track click (same as views: queue then flush so it shows after refresh)
-    queueClick(linkId, linktree.id);
-    flushNow().catch(() => {});
+    // Track click - send directly to API
+    fetch(`/api/public/links/${linkId}/click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ linktree_id: linktree.id }),
+      keepalive: true,
+    }).catch(() => {});
 
     const finalUrl = appendMessageToUrl(url, platform, defaultMessage);
     try {
