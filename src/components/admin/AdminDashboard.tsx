@@ -60,7 +60,7 @@ interface AdminDashboardProps {
   currentUsername?: string;
 }
 
-export const AdminDashboard = memo(function AdminDashboard({ 
+export const AdminDashboard = memo(function AdminDashboard({
   initialLinktrees = [],
   currentUsername = "",
 }: AdminDashboardProps) {
@@ -106,7 +106,7 @@ export const AdminDashboard = memo(function AdminDashboard({
     if (showLoading) setIsLoading(true);
     try {
       const { fetchWithCache } = await import('@/lib/utils/cache');
-      const url = bypassCache 
+      const url = bypassCache
         ? `/api/linktrees?_t=${Date.now()}`
         : '/api/linktrees';
       const result = await fetchWithCache<{ data: Linktree[] }>(
@@ -118,7 +118,7 @@ export const AdminDashboard = memo(function AdminDashboard({
         bypassCache
       );
       const linktrees = result.data || [];
-      
+
       const sortedLinktrees = [...linktrees].sort((a, b) => {
         if (a.uid === "ari") return -1;
         if (b.uid === "ari") return 1;
@@ -126,7 +126,7 @@ export const AdminDashboard = memo(function AdminDashboard({
         const dateB = Date.parse(b.created_at) || 0;
         return dateB - dateA;
       });
-      
+
       setLinktreesData(sortedLinktrees);
     } catch (error) {
       console.error("Error fetching linktrees:", error);
@@ -197,10 +197,10 @@ export const AdminDashboard = memo(function AdminDashboard({
     if (initialLinktrees.length === 0) {
       fetchLinktrees(true);
     }
-    
+
     // Fetch analytics totals
     fetchAnalyticsTotals();
-    
+
     // Preload modal component in background for faster subsequent opens
     import("@/components/admin/CreateLinktreeModal").catch(() => {
       // Silently fail preload - not critical
@@ -213,7 +213,7 @@ export const AdminDashboard = memo(function AdminDashboard({
     setIsModalOpen(true);
     setIsLoadingEditData(true);
     setEditData(null); // Clear previous data
-    
+
     try {
       // Fetch edit data - always fresh from DB (no cache)
       const response = await fetch(`/api/linktrees/${id}/edit`, {
@@ -223,12 +223,12 @@ export const AdminDashboard = memo(function AdminDashboard({
           'Cache-Control': 'no-store',
         },
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || `Failed to fetch edit data (${response.status})`;
         console.error("API error:", errorMessage, errorData);
-        
+
         // If unauthorized, suggest re-login
         if (response.status === 401) {
           const shouldReload = window.confirm("دەستپێکردنەوەت بەسەرهاتووە. دەتەوێت دووبارە لۆگین بکەیت؟");
@@ -237,35 +237,35 @@ export const AdminDashboard = memo(function AdminDashboard({
             return;
           }
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       const result = await response.json();
-      
+
       // Validate response structure
       if (!result || !result.data) {
         throw new Error("Invalid response format: missing data");
       }
-      
+
       const { linktree, links } = result.data;
-      
+
       // Validate required fields
       if (!linktree || !linktree.id) {
         throw new Error("Invalid response format: missing linktree data");
       }
-      
+
       if (!Array.isArray(links)) {
         throw new Error("Invalid response format: links must be an array");
       }
-      
+
       setEditData({ linktree, links });
-      
+
     } catch (error) {
       console.error("Error fetching edit data:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to load linktree data";
       console.error(`Failed to load linktree data: ${errorMessage}`);
-      
+
       // Only close modal if it's not an auth error (auth error already handled above)
       if (!(error instanceof Error && error.message.includes("Unauthorized"))) {
         setIsModalOpen(false); // Close modal on error
@@ -286,24 +286,24 @@ export const AdminDashboard = memo(function AdminDashboard({
       console.error("ناتوانیت پەیج پێشگریمان بسڕیتەوە");
       return;
     }
-    
+
     setLinktreeToDelete({ id, uid, name });
     setIsDeleteModalOpen(true);
   }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!linktreeToDelete || isDeleting) return;
-    
+
     setIsDeleting(true);
-    
+
     // Optimistic update - remove from UI immediately
     const deletedId = linktreeToDelete.id;
     setLinktreesData(prev => prev.filter(lt => lt.id !== deletedId));
-    
+
     // Close modal immediately for better UX
     setIsDeleteModalOpen(false);
     setLinktreeToDelete(null);
-    
+
     try {
       const response = await fetch(`/api/linktrees/${deletedId}`, {
         method: "DELETE",
@@ -329,7 +329,7 @@ export const AdminDashboard = memo(function AdminDashboard({
         clearCachedData(`/api/linktrees/${linktreeToDelete.id}/links`);
         clearCachedData(`/api/linktrees/${linktreeToDelete.id}/analytics`);
       }
-      
+
       // Success - no need to fetch again, optimistic update already applied
     } catch (error) {
       console.error("Error deleting linktree:", error);
@@ -369,18 +369,18 @@ export const AdminDashboard = memo(function AdminDashboard({
     footer_hidden?: boolean;
     platforms: string[];
     links: Record<string, string[]>;
-    linkMetadata?: Record<string, Array<{display_name?: string; description?: string; default_message?: string; metadata?: Record<string, unknown>}>>;
+    linkMetadata?: Record<string, Array<{ display_name?: string; description?: string; default_message?: string; metadata?: Record<string, unknown> }>>;
   }, editId?: string) => {
     // Prevent duplicate submissions
     if (isSubmittingRef.current) {
       // Submission already in progress, ignoring duplicate call
       return;
     }
-    
+
     // Mark as submitting immediately to prevent duplicates
     isSubmittingRef.current = true;
     let errorShown = false; // Track if error was shown
-    
+
     try {
       const normalizedTemplateConfig = normalizeTemplateConfig(data.templateKey, data.templateConfig);
 
@@ -388,7 +388,7 @@ export const AdminDashboard = memo(function AdminDashboard({
         // ============================================
         // UPDATE EXISTING LINKTREE
         // ============================================
-        
+
         // Validate required fields
         if (!data.name?.trim() || !data.slug?.trim() || !data.background_color) {
           console.error("Name, slug, and background color are required");
@@ -443,11 +443,11 @@ export const AdminDashboard = memo(function AdminDashboard({
                 const maybeError = parsed as { error?: unknown; details?: unknown };
                 const parsedDetails = Array.isArray(maybeError.details)
                   ? maybeError.details
-                      .filter((detail): detail is ErrorDetail => typeof detail === "object" && detail !== null)
-                      .map((detail) => ({
-                        field: typeof detail.field === "string" ? detail.field : undefined,
-                        message: typeof detail.message === "string" ? detail.message : undefined,
-                      }))
+                    .filter((detail): detail is ErrorDetail => typeof detail === "object" && detail !== null)
+                    .map((detail) => ({
+                      field: typeof detail.field === "string" ? detail.field : undefined,
+                      message: typeof detail.message === "string" ? detail.message : undefined,
+                    }))
                   : undefined;
 
                 errorData = {
@@ -465,13 +465,13 @@ export const AdminDashboard = memo(function AdminDashboard({
 
           const detailMessage = Array.isArray(errorData?.details)
             ? errorData.details
-                .filter((detail) => detail && (detail.field || detail.message))
-                .map((detail) => {
-                  const fieldPrefix = detail.field ? `${detail.field}: ` : "";
-                  return `${fieldPrefix}${detail.message ?? ""}`.trim();
-                })
-                .filter((entry) => entry.length > 0)
-                .join(", ")
+              .filter((detail) => detail && (detail.field || detail.message))
+              .map((detail) => {
+                const fieldPrefix = detail.field ? `${detail.field}: ` : "";
+                return `${fieldPrefix}${detail.message ?? ""}`.trim();
+              })
+              .filter((entry) => entry.length > 0)
+              .join(", ")
             : typeof errorData?.details === "string"
               ? errorData.details
               : "";
@@ -508,7 +508,7 @@ export const AdminDashboard = memo(function AdminDashboard({
           default_message?: string | null;
           metadata?: Record<string, unknown>;
         }> = [];
-        
+
         // Track linkId to index mapping for error display
         const linkIdToIndexMap: Record<number, string> = {};
         let linkCreateIndex = 0;
@@ -520,27 +520,27 @@ export const AdminDashboard = memo(function AdminDashboard({
             if (!platform || typeof platform !== "string" || platform.trim().length === 0) {
               continue; // Skip invalid platforms
             }
-            
+
             // Validate urls array
             if (!Array.isArray(urls) || urls.length === 0) {
               continue; // Skip empty arrays
             }
-            
+
             const metadataArray = data.linkMetadata?.[platform] || [];
             urls.forEach((url, index) => {
               // Validate URL
               if (!url || typeof url !== "string" || url.trim().length === 0) {
                 return; // Skip invalid URLs
               }
-              
+
               const trimmedPlatform = platform.trim();
               const trimmedUrl = url.trim();
-              
+
               // Additional validation: ensure platform and URL are not just whitespace
               if (trimmedPlatform.length === 0 || trimmedUrl.length === 0) {
                 return; // Skip empty strings
               }
-              
+
               const metadata = metadataArray[index] || {};
               linksToCreate.push({
                 platform: trimmedPlatform,
@@ -548,10 +548,11 @@ export const AdminDashboard = memo(function AdminDashboard({
                 display_order: displayOrder++,
                 display_name: metadata.display_name?.trim() || null,
                 description: metadata.description?.trim() || null,
-                default_message: metadata.default_message?.trim() || null,
+                // Preserve empty string intentionally — user may have cleared the default message
+                default_message: metadata.default_message !== undefined ? metadata.default_message.trim() : null,
                 metadata: metadata.metadata && typeof metadata.metadata === "object" && !Array.isArray(metadata.metadata) ? metadata.metadata : {},
               });
-              
+
               // Store mapping: index in linksToCreate -> platform_index (for error mapping)
               linkIdToIndexMap[linkCreateIndex] = `${trimmedPlatform}_${index}`;
               linkCreateIndex++;
@@ -575,13 +576,13 @@ export const AdminDashboard = memo(function AdminDashboard({
           if (!batchResponse.ok) {
             const errorData = await batchResponse.json().catch(() => ({}));
             let errorMessage = "Failed to update links";
-            
+
             // Check if there are per-link validation errors
             if (Array.isArray(errorData.details) && errorData.details.length > 0) {
               // Map errors to link positions for display in modal
               // The API returns errors with index corresponding to linksToCreate array
               const linkErrors: Record<string, string> = {};
-              
+
               errorData.details.forEach((d: { index?: number; platform?: string; url?: string; reason?: string }) => {
                 if (d.index !== undefined && d.platform && d.reason) {
                   // Map API index to platform_index format using our mapping
@@ -594,11 +595,11 @@ export const AdminDashboard = memo(function AdminDashboard({
                   }
                 }
               });
-              
+
               // Store link errors to pass to modal
               errorMessage = errorData.message || errorData.error || "Some links have validation errors";
               console.error(errorMessage);
-              
+
               // Throw error with link errors attached
               const error = new Error(errorMessage) as Error & { linkErrors?: Record<string, string> };
               error.linkErrors = linkErrors;
@@ -634,28 +635,28 @@ export const AdminDashboard = memo(function AdminDashboard({
             clearCachedData(`/api/linktrees/uid/${updateResponseData.data.uid}`);
             clearCachedData(`/api/public/linktrees/${updateResponseData.data.uid}`);
           }
-          
-          setLinktreesData(prev => prev.map(lt => 
+
+          setLinktreesData(prev => prev.map(lt =>
             lt.id === editId ? { ...lt, ...updateResponseData.data } : lt
           ));
         }
-        
+
         // Step 5: Show success notification
         if (!errorShown) {
           // Linktree updated successfully
           errorShown = true;
         }
-        
+
         // Close modal immediately for better UX
         setIsModalOpen(false);
         setEditData(null);
-        
+
         // Background refresh disabled to reduce server load on free hosting
       } else {
         // ============================================
         // CREATE NEW LINKTREE
         // ============================================
-        
+
         // Validate required fields
         if (!data.name?.trim() || !data.slug?.trim() || !data.background_color) {
           console.error("Name, slug, and background color are required");
@@ -710,7 +711,7 @@ export const AdminDashboard = memo(function AdminDashboard({
           // Clear cache after successful creation
           const { clearCachedData } = await import('@/lib/utils/cache');
           clearCachedData('/api/linktrees');
-          
+
           // Optimistic update - add to UI immediately
           const newLinktree = result.data;
           setLinktreesData(prev => {
@@ -723,10 +724,10 @@ export const AdminDashboard = memo(function AdminDashboard({
             });
             return sorted;
           });
-          
+
           // Success:"Linktree created successfully");
           handleModalClose();
-          
+
           // Background refresh disabled to reduce server load on free hosting
         } else {
           console.error("Failed to create linktree: No data returned");
@@ -756,19 +757,19 @@ export const AdminDashboard = memo(function AdminDashboard({
   }
 
   return (
-    <div 
+    <div
       className="h-screen flex flex-col overflow-hidden bg-white"
       data-admin-dashboard
     >
-      <AdminHeader 
-        onCreateNew={handleCreateNew} 
+      <AdminHeader
+        onCreateNew={handleCreateNew}
         onRefresh={handleRefresh}
         onProfileClick={() => setIsProfileModalOpen(true)}
       />
 
       {/* Main Content */}
-      <main 
-        className="flex-1 w-full overflow-y-auto bg-white" 
+      <main
+        className="flex-1 w-full overflow-y-auto bg-white"
         dir="rtl"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 lg:py-10">
@@ -798,61 +799,59 @@ export const AdminDashboard = memo(function AdminDashboard({
 
           {/* Linktrees View */}
           <div className="mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-5 md:mb-6">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-700">پەیجەکان</h2>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-              <span className="text-xs sm:text-sm text-slate-600 bg-white/90 backdrop-blur-sm px-3 sm:px-4 py-1.5 rounded-xl border border-gray-200 text-center sm:text-left shadow-sm">
-                {linktreesData.length} پەیج
-              </span>
-              {/* View Mode Toggle */}
-              <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1.5 sm:gap-2 p-1 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ${
-                    viewMode === "grid"
-                      ? "bg-gradient-to-r from-brand-400 to-brand-400 text-white shadow-md"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                  }`}
-                  aria-label="Grid view"
-                  title="بینینی گرید"
-                >
-                  <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="hidden xs:inline">Grid</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("table")}
-                  className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ${
-                    viewMode === "table"
-                      ? "bg-gradient-to-r from-amber-400 to-yellow-400 text-white shadow-md"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                  }`}
-                  aria-label="Table view"
-                  title="بینینی خشتە"
-                >
-                  <Table2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="hidden xs:inline">Table</span>
-                </button>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-5 md:mb-6">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-700">پەیجەکان</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <span className="text-xs sm:text-sm text-slate-600 bg-white/90 backdrop-blur-sm px-3 sm:px-4 py-1.5 rounded-xl border border-gray-200 text-center sm:text-left shadow-sm">
+                  {linktreesData.length} پەیج
+                </span>
+                {/* View Mode Toggle */}
+                <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1.5 sm:gap-2 p-1 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ${viewMode === "grid"
+                        ? "bg-gradient-to-r from-brand-400 to-brand-400 text-white shadow-md"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                      }`}
+                    aria-label="Grid view"
+                    title="بینینی گرید"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="hidden xs:inline">Grid</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode("table")}
+                    className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ${viewMode === "table"
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-400 text-white shadow-md"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                      }`}
+                    aria-label="Table view"
+                    title="بینینی خشتە"
+                  >
+                    <Table2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="hidden xs:inline">Table</span>
+                  </button>
+                </div>
               </div>
             </div>
+            {viewMode === "grid" ? (
+              <LinktreesGrid
+                data={linktreesData}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onViewAnalytics={handleViewAnalytics}
+              />
+            ) : (
+              <LinktreesTable
+                data={linktreesData}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onViewAnalytics={handleViewAnalytics}
+              />
+            )}
           </div>
-          {viewMode === "grid" ? (
-            <LinktreesGrid 
-              data={linktreesData} 
-              isLoading={isLoading}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onViewAnalytics={handleViewAnalytics}
-            />
-          ) : (
-            <LinktreesTable 
-              data={linktreesData} 
-              isLoading={isLoading}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onViewAnalytics={handleViewAnalytics}
-            />
-          )}
-        </div>
         </div>
       </main>
 

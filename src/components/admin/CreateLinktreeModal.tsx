@@ -1013,8 +1013,11 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         const displayName = link.displayName != null ? String(link.displayName).trim() : "";
         linkMetadata[platform].push({
           display_name: displayName.length > 0 ? displayName : undefined,
+          // Use the user-typed message as-is (including empty string).
+          // Only fall back to DEFAULT_WHATSAPP_MESSAGE when the state was never touched (i.e. equals the default)
+          // but if the user explicitly cleared it, store empty string so the link opens with no pre-filled text.
           default_message: platform === "whatsapp" || platform === "telegram" || platform === "viber" 
-            ? (defaultWhatsAppMessage.trim() || DEFAULT_WHATSAPP_MESSAGE)
+            ? defaultWhatsAppMessage
             : undefined,
           metadata: {
             original_input: linkValue,
@@ -1069,7 +1072,8 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       // Store default WhatsApp message in template_config before normalization
       const templateConfigWithMessage = {
         ...templateConfig,
-        default_whatsapp_message: defaultWhatsAppMessage.trim() || DEFAULT_WHATSAPP_MESSAGE,
+        // Store the actual message the user typed, including empty string (intentional clear)
+        default_whatsapp_message: defaultWhatsAppMessage,
       };
       const normalizedTemplateConfig = normalizeTemplateConfig(selectedTemplateKey, templateConfigWithMessage);
 

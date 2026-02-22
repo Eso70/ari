@@ -26,7 +26,7 @@ export async function POST(
     }
 
     const { id: linktreeId } = await params;
-    
+
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(linktreeId)) {
@@ -65,7 +65,7 @@ export async function POST(
         display_order: link.display_order,
         display_name: link.display_name || null,
         description: link.description || null,
-        default_message: link.default_message || null,
+        default_message: link.default_message !== undefined ? link.default_message : null,
         metadata: link.metadata || null,
         linktree_id: linktreeId,
       })),
@@ -77,7 +77,7 @@ export async function POST(
         message: err.message,
       }));
       return NextResponse.json(
-        { 
+        {
           error: "Validation failed",
           details: errors,
         },
@@ -93,30 +93,30 @@ export async function POST(
     createLinks.forEach((link, index) => {
       // Check if platform and URL are defined
       if (!link.platform || typeof link.platform !== "string") {
-        invalidLinks.push({ 
-          index, 
-          platform: String(link.platform || "undefined"), 
+        invalidLinks.push({
+          index,
+          platform: String(link.platform || "undefined"),
           url: String(link.url || "undefined"),
           reason: "Platform is missing or invalid"
         });
         return;
       }
-      
+
       if (!link.url || typeof link.url !== "string" || link.url.trim().length === 0) {
-        invalidLinks.push({ 
-          index, 
-          platform: link.platform, 
+        invalidLinks.push({
+          index,
+          platform: link.platform,
           url: String(link.url || "undefined"),
           reason: "URL is missing or empty"
         });
         return;
       }
-      
+
       // Validate URL format for the platform
       if (!validatePlatformUrl(link.platform, link.url)) {
-        invalidLinks.push({ 
-          index, 
-          platform: link.platform, 
+        invalidLinks.push({
+          index,
+          platform: link.platform,
           url: link.url,
           reason: `Invalid URL format for platform: ${link.platform}`
         });
@@ -124,12 +124,12 @@ export async function POST(
     });
 
     if (invalidLinks.length > 0) {
-      const errorDetails = invalidLinks.map(link => 
+      const errorDetails = invalidLinks.map(link =>
         `Link ${link.index + 1} (${link.platform}): ${link.reason}`
       ).join("; ");
-      
+
       return NextResponse.json(
-        { 
+        {
           error: "Invalid URL format for platform(s)",
           details: invalidLinks,
           message: errorDetails,
@@ -144,7 +144,7 @@ export async function POST(
       if (link.metadata && typeof link.metadata === "object" && !Array.isArray(link.metadata) && link.metadata !== null) {
         safeMetadata = link.metadata as Record<string, unknown>;
       }
-      
+
       return {
         linktree_id: link.linktree_id,
         platform: link.platform,
@@ -152,7 +152,10 @@ export async function POST(
         display_order: link.display_order,
         display_name: link.display_name ? sanitizeString(link.display_name) : null,
         description: link.description ? sanitizeString(link.description) : null,
-        default_message: link.default_message ? sanitizeString(link.default_message) : null,
+        // Preserve empty string — user may have intentionally cleared the default message
+        default_message: link.default_message !== undefined && link.default_message !== null
+          ? sanitizeString(link.default_message)
+          : link.default_message ?? null,
         metadata: safeMetadata,
       };
     });
@@ -161,7 +164,7 @@ export async function POST(
     // ALWAYS delete ALL links for the linktree to prevent duplicates and ensure clean state
     // This is safer than deleting by IDs because it ensures no links are left behind
     await deleteAllLinksForLinktree(linktreeId);
-    
+
     // Only create new links after ALL deletion is complete
     // Sequential execution ensures no duplicates
     const createdLinks = sanitizedCreateLinks.length > 0
@@ -181,7 +184,7 @@ export async function POST(
         createdCount: createdLinks.length,
         links: createdLinks,
       }
-    }, { 
+    }, {
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
