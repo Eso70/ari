@@ -5,10 +5,10 @@ import { X, Loader2 } from "lucide-react";
 import { BasicInfoStep } from "./steps/BasicInfoStep";
 import { PlatformSelectionStep } from "./steps/PlatformSelectionStep";
 import { LinksStep } from "./steps/LinksStep";
-import { 
-  BACKGROUND_COLORS, 
-  DEFAULT_SUBTITLE, 
-  DEFAULT_FOOTER_TEXT, 
+import {
+  BACKGROUND_COLORS,
+  DEFAULT_SUBTITLE,
+  DEFAULT_FOOTER_TEXT,
   DEFAULT_FOOTER_PHONE,
   DEFAULT_WHATSAPP_MESSAGE,
   getPlatformNameKurdish,
@@ -74,7 +74,7 @@ interface CreateLinktreeModalProps {
     footer_hidden?: boolean;
     platforms: string[];
     links: Record<string, string[]>;
-    linkMetadata?: Record<string, Array<{display_name?: string; description?: string; default_message?: string; metadata?: Record<string, unknown>}>>;
+    linkMetadata?: Record<string, Array<{ display_name?: string; description?: string; default_message?: string; metadata?: Record<string, unknown> }>>;
   }, editId?: string) => void;
   editData?: EditLinkData | null;
   isLoadingEditData?: boolean;
@@ -101,9 +101,9 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
   const [footerText, setFooterText] = useState(DEFAULT_FOOTER_TEXT);
   const [footerPhone, setFooterPhone] = useState(DEFAULT_FOOTER_PHONE);
   const [footerHidden, setFooterHidden] = useState(false);
-  const [defaultWhatsAppMessage, setDefaultWhatsAppMessage] = useState(DEFAULT_WHATSAPP_MESSAGE);
+  const [defaultWhatsAppMessage, setDefaultWhatsAppMessage] = useState("");
   const [templateConfig, setTemplateConfig] = useState<Record<string, unknown>>(() => normalizeTemplateConfig(TEMPLATE_DEFAULT_ID, null));
-  
+
   // Validation errors state
   const [errors, setErrors] = useState<{
     name?: string;
@@ -115,7 +115,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
     footerPhone?: string;
     image?: string;
   }>({});
-  
+
   // Per-link validation errors: { platformId_linkIndex: errorMessage }
   const [linkErrors, setLinkErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<{
@@ -127,7 +127,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
     links?: boolean;
     footerPhone?: boolean;
   }>({});
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditMode = !!editData;
   const initializedLinktreeIdRef = useRef<string | null>(null);
@@ -190,20 +190,20 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
     if (!selected || selected.length === 0) {
       return "لانیکەم یەک پلاتفۆرم هەڵبژێرە";
     }
-    
+
     // Validate each link
     for (const linkId of selected) {
       const link = links.find(l => l.id === linkId);
       if (!link) continue;
-      
+
       const linkValue = link.value?.trim() || "";
       const linkUrl = link.url?.trim() || "";
-      
+
       // Must have either value or URL
       if (!linkValue && !linkUrl) {
         return "تکایە بەروارەکان بۆ لینکەکان بنووسە";
       }
-      
+
       // For phone-based platforms, validate phone number format
       const isPhoneBased = link.platform === "whatsapp" || link.platform === "phone" || link.platform === "viber";
       if (isPhoneBased && linkValue) {
@@ -214,20 +214,20 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         if (digitsOnly.length < 7) {
           return "ژمارەی مۆبایل نادروستە (دەبێت لانیکەم ٧ ژمارە بێت)";
         }
-        
+
         // Validate country code exists and is not empty
         const countryCode = link.countryCode?.trim() || "";
         if (!countryCode) {
           return "تکایە وڵات هەڵبژێرە";
         }
-        
+
         // Validate country code format (should be numeric, 1-3 digits)
         if (!/^\d{1,3}$/.test(countryCode)) {
           return "کۆدی وڵات نادروستە";
         }
       }
     }
-    
+
     return undefined;
   }, []);
 
@@ -242,7 +242,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
   // Validate all fields before submission
   const validateAllFields = useCallback((): boolean => {
     const newErrors: typeof errors = {};
-    
+
     newErrors.name = validateName(name);
     newErrors.slug = validateSlug(slug);
     newErrors.backgroundColor = validateBackgroundColor(backgroundColor);
@@ -252,7 +252,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
     if (footerPhone.trim()) {
       newErrors.footerPhone = validateFooterPhone(footerPhone);
     }
-    
+
     setErrors(newErrors);
     setTouched({
       name: true,
@@ -263,7 +263,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       links: true,
       footerPhone: true,
     });
-    
+
     return !Object.values(newErrors).some(error => error !== undefined);
   }, [name, slug, backgroundColor, templateKey, selectedPlatforms, socialLinks, footerPhone, validateName, validateSlug, validateBackgroundColor, validateTemplateKey, validatePlatforms, validateLinks, validateFooterPhone]);
 
@@ -324,10 +324,10 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         }
         return;
       }
-      
+
       // Clear any previous image errors
       setErrors(prev => ({ ...prev, image: undefined }));
-      
+
       setProfileImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -404,7 +404,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
     }
 
     // Initialize only once when editData is first loaded or when switching between edit/create modes
-    const shouldInitialize = editData 
+    const shouldInitialize = editData
       ? (initializedLinktreeIdRef.current !== editData.linktree.id)
       : (initializedLinktreeIdRef.current !== "create");
 
@@ -417,14 +417,14 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       // VALIDATE AND SANITIZE EDIT DATA
       // ============================================
       const linktree = editData.linktree;
-      
+
       // Validate linktree ID
       if (!linktree.id || typeof linktree.id !== "string") {
         console.error("Invalid linktree ID in edit data");
         console.error("Invalid linktree data");
         return;
       }
-      
+
       // Sanitize and set name (max 100 chars)
       const sanitizedName = (linktree.name || "").trim().slice(0, 100);
       if (!sanitizedName) {
@@ -432,15 +432,15 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       } else {
         setName(sanitizedName);
       }
-      
+
       // Sanitize and set subtitle (max 200 chars)
       const sanitizedSubtitle = (linktree.subtitle || "").trim().slice(0, 200);
       setSubtitle(sanitizedSubtitle || DEFAULT_SUBTITLE);
-      
+
       // Sanitize and set slug (max 100 chars, validate format)
       const sanitizedSlug = (linktree.seo_name || buildSlugFromName(sanitizedName)).trim().slice(0, 100);
       setSlug(sanitizedSlug || buildSlugFromName(sanitizedName));
-      
+
       // Validate and set background color
       const bgColor = linktree.background_color || "#eab308";
       const presetColor = BACKGROUND_COLORS.find(c => c.id === bgColor || c.value === bgColor);
@@ -453,18 +453,18 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         : TEMPLATE_DEFAULT_ID;
       setTemplateKey(sanitizedTemplate);
       setTemplateConfig(normalizedConfig);
-      
+
       // Load default WhatsApp message from template_config
       const savedMessage = (linktree.template_config as Record<string, unknown> | null)?.default_whatsapp_message;
       if (typeof savedMessage === "string" && savedMessage.trim()) {
         setDefaultWhatsAppMessage(savedMessage.trim());
       }
-      
+
       // Sanitize footer text (max 200 chars)
       const sanitizedFooterText = (linktree.footer_text || "").trim().slice(0, 200);
       // Always default to "Ari" if empty
       setFooterText(sanitizedFooterText || DEFAULT_FOOTER_TEXT);
-      
+
       // Validate and sanitize footer phone
       const footerPhoneValue = (linktree.footer_phone || "").trim();
       if (footerPhoneValue && /^\+?\d{10,15}$/.test(footerPhoneValue)) {
@@ -476,7 +476,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       // Set footer hidden
       setFooterHidden(linktree.footer_hidden ?? false);
 
-      
+
       // Validate and set image
       if (linktree.image && typeof linktree.image === "string") {
         const imageUrl = linktree.image.trim();
@@ -495,34 +495,34 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       } else {
         setProfileImagePreview(null);
       }
-      
+
       // Use memoized processed links (already validated in useMemo)
       // Access processedLinks directly from the memoized value
       const currentProcessedLinks = editData.links && editData.links.length > 0
         ? (() => {
-            const sortedLinks = [...editData.links].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
-            return sortedLinks.map((link, index) => {
-              const linkId = `${link.platform}-${link.id}-${index}`;
-              const extracted = extractValueFromUrl(link.platform, link.url, link.metadata || null);
-              const kurdishName = getPlatformNameKurdish(link.platform);
-              const englishName = SOCIAL_PLATFORMS.find((p) => p.id === link.platform)?.name ?? link.platform;
-              const dn = link.display_name || kurdishName;
-              const nameLocale: "ku" | "en" = dn === kurdishName ? "ku" : dn === englishName ? "en" : "ku";
-              return {
-                id: linkId,
-                platform: link.platform,
-                url: link.url,
-                value: extracted.value,
-                countryCode: extracted.countryCode,
-                displayName: dn,
-                nameLocale,
-                enabled: true,
-                order: link.display_order || index,
-              };
-            });
-          })()
+          const sortedLinks = [...editData.links].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+          return sortedLinks.map((link, index) => {
+            const linkId = `${link.platform}-${link.id}-${index}`;
+            const extracted = extractValueFromUrl(link.platform, link.url, link.metadata || null);
+            const kurdishName = getPlatformNameKurdish(link.platform);
+            const englishName = SOCIAL_PLATFORMS.find((p) => p.id === link.platform)?.name ?? link.platform;
+            const dn = link.display_name || kurdishName;
+            const nameLocale: "ku" | "en" = dn === kurdishName ? "ku" : dn === englishName ? "en" : "ku";
+            return {
+              id: linkId,
+              platform: link.platform,
+              url: link.url,
+              value: extracted.value,
+              countryCode: extracted.countryCode,
+              displayName: dn,
+              nameLocale,
+              enabled: true,
+              order: link.display_order || index,
+            };
+          });
+        })()
         : [];
-      
+
       if (currentProcessedLinks.length > 0) {
         setSocialLinks(currentProcessedLinks);
         setSelectedPlatforms(currentProcessedLinks.map(l => l.id));
@@ -530,14 +530,14 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         setSocialLinks([]);
         setSelectedPlatforms([]);
       }
-      
+
       // Only reset to first step when first opening edit mode, not on subsequent renders
       if (initializedLinktreeIdRef.current === null) {
         setCurrentStep("basic");
         setIsSubmitting(false);
         submitAttemptedRef.current = false;
       }
-      
+
       initializedLinktreeIdRef.current = editData.linktree.id;
     } else if (!editData) {
       // Reset form for create mode
@@ -553,7 +553,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       setSocialLinks([]);
       setFooterText(DEFAULT_FOOTER_TEXT);
       setFooterPhone(DEFAULT_FOOTER_PHONE);
-      setDefaultWhatsAppMessage(DEFAULT_WHATSAPP_MESSAGE);
+      setDefaultWhatsAppMessage("");
       setCurrentStep("basic");
       setIsSubmitting(false);
       submitAttemptedRef.current = false;
@@ -594,24 +594,24 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         // Check if platform is already selected by looking at current links
         const existingLinks = prevLinks.filter(l => l.platform === platformId);
         const isSelected = existingLinks.length > 0;
-        
+
         if (isSelected) {
           // Remove all instances of this platform
           const remainingLinks = prevLinks.filter(l => l.platform !== platformId);
           const removedLinkIds = existingLinks.map(l => l.id);
-          
+
           // Update selected platforms
           setSelectedPlatforms(prevSelected => {
             const newSelectedPlatforms = prevSelected.filter(id => !removedLinkIds.includes(id));
-            
+
             // Validate platforms after removal
             if (touched.platforms) {
               setErrors(prevErrors => ({ ...prevErrors, platforms: validatePlatforms(newSelectedPlatforms) }));
             }
-            
+
             return newSelectedPlatforms;
           });
-          
+
           return remainingLinks;
         } else {
           // Add new instance
@@ -626,19 +626,19 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
             enabled: true,
             order: prevLinks.length,
           };
-          
+
           // Update selected platforms
           setSelectedPlatforms(prevSelected => {
             const newSelectedPlatforms = [...prevSelected, newLinkId];
-            
+
             // Clear platforms error if at least one is selected
             if (touched.platforms && newSelectedPlatforms.length > 0) {
               setErrors(prevErrors => ({ ...prevErrors, platforms: undefined }));
             }
-            
+
             return newSelectedPlatforms;
           });
-          
+
           return [...prevLinks, newLink];
         }
       });
@@ -814,7 +814,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       const slugError = slug.trim() ? validateSlug(slug) : undefined;
       const bgError = validateBackgroundColor(backgroundColor);
       const templateError = validateTemplateKey(templateKey);
-      
+
       if (nameError || bgError || templateError) {
         setErrors(prev => ({
           ...prev,
@@ -830,7 +830,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
           backgroundColor: true,
           templateKey: true,
         }));
-        
+
         if (nameError) {
           console.error(nameError);
           document.getElementById("name")?.focus();
@@ -841,21 +841,21 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         }
         return;
       }
-      
+
       // Clear errors if validation passes
       setErrors(prev => ({ ...prev, name: undefined, slug: slugError, backgroundColor: undefined, templateKey: undefined }));
       setCurrentStep("select");
     } else if (currentStep === "select") {
       // Validate platforms before moving to links step
       const platformsError = validatePlatforms(selectedPlatforms);
-      
+
       if (platformsError) {
         setErrors(prev => ({ ...prev, platforms: platformsError }));
         setTouched(prev => ({ ...prev, platforms: true }));
         console.error(platformsError);
         return;
       }
-      
+
       // Clear errors if validation passes
       setErrors(prev => ({ ...prev, platforms: undefined }));
       setCurrentStep("links");
@@ -875,26 +875,26 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // CRITICAL: Prevent duplicate submissions
     if (submitAttemptedRef.current || isSubmitting) {
       return; // Silently prevent duplicate submissions
     }
-    
+
     // CRITICAL: Only allow submission on the links step
     if (currentStep !== "links") {
       return;
     }
-    
+
     // Mark as submitting immediately
     setIsSubmitting(true);
     submitAttemptedRef.current = true;
-    
+
     try {
       // ============================================
       // VALIDATION CHECKS
       // ============================================
-      
+
       // Validate all fields before submission
       if (!validateAllFields()) {
         // Focus first invalid field
@@ -917,24 +917,24 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         }
         throw new Error("Validation failed");
       }
-      
+
       // Validate name
       const sanitizedName = name.trim();
-      
+
       // Validate slug
       const sanitizedSlug = slug.trim() || buildSlugFromName(sanitizedName);
-      
+
       // Validate background color
       const selectedBgColor = BACKGROUND_COLORS.find(c => c.id === backgroundColor)?.value || backgroundColor;
 
       const selectedTemplateKey = isTemplateKey(templateKey) ? templateKey : TEMPLATE_DEFAULT_ID;
-      
+
       // Validate links
       if (!selectedPlatforms || selectedPlatforms.length === 0) {
         console.error("لانیکەم یەک پلاتفۆرم هەڵبژێرە");
         throw new Error("No platforms selected");
       }
-      
+
       // ============================================
       // IMAGE UPLOAD
       // ============================================
@@ -965,16 +965,16 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       // PROCESS LINKS DATA
       // ============================================
       const processedLinks: Record<string, string[]> = {};
-      const linkMetadata: Record<string, Array<{display_name?: string; description?: string; default_message?: string; metadata?: Record<string, unknown>}>> = {};
-      
+      const linkMetadata: Record<string, Array<{ display_name?: string; description?: string; default_message?: string; metadata?: Record<string, unknown> }>> = {};
+
       selectedPlatforms.forEach(linkId => {
         const link = socialLinks.find(l => l.id === linkId);
         if (!link) return;
-        
+
         // Sanitize and validate link value
         const linkValue = link.value?.trim() || "";
         const hasValue = linkValue.length > 0;
-        
+
         // Generate URL from value if url is empty
         // Always regenerate URL to ensure country code changes are reflected
         let linkUrl: string;
@@ -987,25 +987,25 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         } else {
           return; // Skip if no value provided
         }
-        
+
         // Validate URL is not empty
         if (!linkUrl || !linkUrl.trim()) {
           return; // Skip invalid URLs
         }
-        
+
         // Sanitize URL (basic check)
         const sanitizedUrl = linkUrl.trim();
         if (sanitizedUrl.length > 2048) {
           // URL too long, skipping
           return;
         }
-        
+
         const platform = link.platform.trim();
         if (!processedLinks[platform]) {
           processedLinks[platform] = [];
           linkMetadata[platform] = [];
         }
-        
+
         processedLinks[platform].push(sanitizedUrl);
         // Only include country_code in metadata for phone-based platforms
         const isPhonePlatform = platform === "whatsapp" || platform === "phone" || platform === "viber";
@@ -1016,7 +1016,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
           // Use the user-typed message as-is (including empty string).
           // Only fall back to DEFAULT_WHATSAPP_MESSAGE when the state was never touched (i.e. equals the default)
           // but if the user explicitly cleared it, store empty string so the link opens with no pre-filled text.
-          default_message: platform === "whatsapp" || platform === "telegram" || platform === "viber" 
+          default_message: platform === "whatsapp" || platform === "telegram" || platform === "viber"
             ? defaultWhatsAppMessage
             : undefined,
           metadata: {
@@ -1043,7 +1043,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       const sanitizedSubtitle = subtitle.trim() || "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە";
       const sanitizedFooterText = footerText.trim() || undefined;
       const sanitizedFooterPhone = footerPhone.trim() || undefined;
-      
+
       // Validate footer phone format if provided
       if (sanitizedFooterPhone) {
         const phoneError = validateFooterPhone(sanitizedFooterPhone);
@@ -1096,10 +1096,10 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       // Note: Modal closing is handled by parent component after successful submission
       // Don't reset isSubmitting here - let the modal close naturally reset the state
       // This keeps the button disabled with spinner until modal closes
-      
+
     } catch (error) {
       console.error("Error submitting:", error);
-      
+
       // Check if error has link-specific errors
       if (error && typeof error === 'object' && 'linkErrors' in error) {
         const linkErrorsData = (error as Error & { linkErrors?: Record<string, string> }).linkErrors;
@@ -1108,24 +1108,24 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
           // The key format from API is: platform_index (where index is position in linksToCreate)
           // We need to map this to our linkId format
           const mappedErrors: Record<string, string> = {};
-          
+
           // Build a map of platform+index to linkId
           // We need to match the order in which links were processed
           const platformLinkCounts = new Map<string, number>();
           selectedPlatforms.forEach(linkId => {
             const link = socialLinks.find(l => l.id === linkId);
             if (!link) return;
-            
+
             const count = platformLinkCounts.get(link.platform) || 0;
             const errorKey = `${link.platform}_${count}`;
-            
+
             if (linkErrorsData[errorKey]) {
               mappedErrors[linkId] = linkErrorsData[errorKey];
             }
-            
+
             platformLinkCounts.set(link.platform, count + 1);
           });
-          
+
           if (Object.keys(mappedErrors).length > 0) {
             setLinkErrors(mappedErrors);
             console.error("هەندێک لینک هەڵەیەک هەیە. تکایە چاکی بکەوە");
@@ -1147,7 +1147,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
           console.error("هەڵە لە پاشەکەوتکردن");
         }
       }
-      
+
       // ALWAYS reset submission flag on error so user can retry
       submitAttemptedRef.current = false;
       setIsSubmitting(false);
@@ -1167,19 +1167,19 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
       .sort((a, b) => (a.link.order ?? 0) - (b.link.order ?? 0));
 
     const currentIndex = currentSorted.findIndex((item) => item.linkId === linkId);
-    
+
     if (currentIndex === -1) return;
-    
+
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    
+
     if (newIndex < 0 || newIndex >= currentSorted.length) return;
 
     // Swap items
     const reorderedLinks = [...currentSorted];
     [reorderedLinks[currentIndex], reorderedLinks[newIndex]] = [reorderedLinks[newIndex], reorderedLinks[currentIndex]];
-    
+
     const newSelectedPlatforms = reorderedLinks.map((item: { linkId: string }) => item.linkId);
-    
+
     setSelectedPlatforms(newSelectedPlatforms);
     setSocialLinks((prev) =>
       prev.map((link) => {
@@ -1192,29 +1192,29 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
   // Check if there are any valid links (with values filled in) - optimized
   const hasValidLinks = useMemo(() => {
     if (selectedPlatforms.length === 0) return false;
-    
+
     // Create a map for O(1) lookup instead of O(n) find
     const linksMap = new Map(socialLinks.map(link => [link.id, link]));
-    
+
     // Check if at least one selected platform has a valid link
     for (const linkId of selectedPlatforms) {
       const link = linksMap.get(linkId);
       if (!link) continue;
-      
+
       // Check if link has a value (user has filled in the input)
       const hasValue = link.value && link.value.trim();
       if (!hasValue) continue;
-      
+
       // Generate URL to verify it's valid
-      const linkUrl = link.url && link.url.trim() 
-        ? link.url 
+      const linkUrl = link.url && link.url.trim()
+        ? link.url
         : generateUrl(link.platform, link.value || "", link.countryCode);
-      
+
       if (linkUrl && linkUrl.trim()) {
         return true; // Found at least one valid link, early return
       }
     }
-    
+
     return false;
   }, [selectedPlatforms, socialLinks]);
 
@@ -1226,14 +1226,14 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
         className="absolute inset-0 bg-black/40 backdrop-blur-md animate-in fade-in duration-300"
         onClick={onClose}
       />
-      
-      <div 
+
+      <div
         className="relative z-10 w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden rounded-2xl bg-primary-95 backdrop-blur-sm border border-gray-100 shadow-2xl animate-in fade-in zoom-in-95 duration-300"
         style={{
           contain: "layout style paint",
         }}
       >
-        <form 
+        <form
           onSubmit={(e) => {
             // Prevent ALL automatic form submissions
             // Only allow submission via explicit button click
@@ -1277,39 +1277,36 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
           <div className="px-4 sm:px-5 md:px-6 py-3 sm:py-4 border-b border-gray-100/50 bg-gradient-to-r from-slate-50/50 to-gray-50/50">
             <div className="flex items-center gap-1 sm:gap-2">
               <div className={`flex items-center gap-1.5 sm:gap-2 ${currentStep === "basic" ? "text-brand-600" : "text-brand-400"}`}>
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium shadow-sm transition-all duration-300 ${
-                  currentStep === "basic" ? "bg-gradient-to-br from-brand-500 to-brand-500 text-white" : "bg-gradient-to-br from-brand-50 to-brand-50 text-brand-600 border border-brand-100"
-                }`}>
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium shadow-sm transition-all duration-300 ${currentStep === "basic" ? "bg-gradient-to-br from-brand-500 to-brand-500 text-white" : "bg-gradient-to-br from-brand-50 to-brand-50 text-brand-600 border border-brand-100"
+                  }`}>
                   {currentStep === "basic" ? "1" : "✓"}
                 </div>
                 <span className="text-xs sm:text-sm hidden sm:block">زانیارییەکان</span>
               </div>
               <div className={`h-0.5 flex-1 transition-colors duration-300 ${currentStep === "select" || currentStep === "links" ? "bg-gradient-to-r from-brand-300 to-brand-300" : "bg-slate-200"}`} />
               <div className={`flex items-center gap-1.5 sm:gap-2 ${currentStep === "select" ? "text-amber-600" : currentStep === "links" ? "text-amber-400" : "text-slate-400"}`}>
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium shadow-sm transition-all duration-300 ${
-                  currentStep === "select" ? "bg-gradient-to-br from-brand-500 to-brand-500 text-white" : 
-                  currentStep === "links" ? "bg-gradient-to-br from-brand-50 to-brand-50 text-brand-600 border border-brand-100" : 
-                  "bg-gradient-to-br from-slate-50 to-gray-50 text-slate-400 border border-slate-100"
-                }`}>
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium shadow-sm transition-all duration-300 ${currentStep === "select" ? "bg-gradient-to-br from-brand-500 to-brand-500 text-white" :
+                    currentStep === "links" ? "bg-gradient-to-br from-brand-50 to-brand-50 text-brand-600 border border-brand-100" :
+                      "bg-gradient-to-br from-slate-50 to-gray-50 text-slate-400 border border-slate-100"
+                  }`}>
                   {currentStep === "links" ? "✓" : "2"}
                 </div>
                 <span className="text-xs sm:text-sm hidden sm:block">پلاتفۆرم</span>
               </div>
               <div className={`h-0.5 flex-1 transition-colors duration-300 ${currentStep === "links" ? "bg-gradient-to-r from-brand-300 to-brand-300" : "bg-slate-200"}`} />
               <div className={`flex items-center gap-1.5 sm:gap-2 ${currentStep === "links" ? "text-brand-600" : "text-slate-400"}`}>
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium shadow-sm transition-all duration-300 ${
-                  currentStep === "links" ? "bg-gradient-to-br from-brand-500 to-brand-500 text-white" : "bg-gradient-to-br from-slate-50 to-gray-50 text-slate-400 border border-slate-100"
-                }`}>3</div>
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium shadow-sm transition-all duration-300 ${currentStep === "links" ? "bg-gradient-to-br from-brand-500 to-brand-500 text-white" : "bg-gradient-to-br from-slate-50 to-gray-50 text-slate-400 border border-slate-100"
+                  }`}>3</div>
                 <span className="text-xs sm:text-sm hidden sm:block">لینکەکان</span>
               </div>
             </div>
           </div>
 
           {/* Content */}
-          <div 
+          <div
             className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 bg-gradient-to-br from-white to-slate-50/20"
-            style={{ 
-              scrollbarWidth: "thin", 
+            style={{
+              scrollbarWidth: "thin",
               scrollbarColor: "rgba(156,163,175,0.5) transparent",
               willChange: "scroll-position",
               transform: "translateZ(0)",
@@ -1324,7 +1321,7 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
                 <p className="text-sm sm:text-base text-slate-500">Loading linktree data...</p>
               </div>
             )}
-            
+
             {/* Step 1: Basic Info */}
             {!isLoadingEditData && currentStep === "basic" && (
               <BasicInfoStep
@@ -1431,8 +1428,8 @@ export const CreateLinktreeModal = memo(function CreateLinktreeModal({
                   if (currentStep === "links" && !isSubmitting && hasValidLinks) {
                     // Create a synthetic form event for handleSubmit
                     const syntheticEvent = {
-                      preventDefault: () => {},
-                      stopPropagation: () => {},
+                      preventDefault: () => { },
+                      stopPropagation: () => { },
                     } as React.FormEvent<HTMLFormElement>;
                     handleSubmit(syntheticEvent);
                   }
